@@ -2,7 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var Zip = require('adm-zip');
 var csv = require('csv');
-var buff = new Buffer(2000);
+var buff = new Buffer(1998);
 var file = 1;
 var mode = null;
 var freq = null;
@@ -12,6 +12,7 @@ if (!filename) {
 }
 filename = path.normalize(filename);
 var parser = csv.parse({delimiter: ','}, function(err, data){
+  var ii = null;
   for (var i = 0; i < data.length; ++i) {
     if (data[i][0] === 'time:') {
       var time  = data[i][1];
@@ -38,12 +39,25 @@ var parser = csv.parse({delimiter: ','}, function(err, data){
       if (mode === 'RAW') {
         for (var y = 1; y < data[i].length; ++y) {
           var v = parseInt(data[i][y]);
-	  buff.writeUInt16LE(v, (y - 1) * 2);
+          buff.writeUInt16LE(v, (y - 1) * 2);
         }
         fs.writeFileSync('logic-1-' + file.toString(), buff);
         ++file;
       }
+      else if (mode === 'ROLLING') {
+        var v = parseInt(data[i][1]);
+        ii = ((i - 1) * 2) - ((file - 1) * buff.length);
+        if (ii >= buff.length) {
+          fs.writeFileSync('logic-1-' + file.toString(), buff);
+          ++file;
+	  ii -= buff.length;
+        }
+        buff.writeUInt16LE(v, ii);
+      }
     }
+  }
+  if (ii != null) {
+    fs.writeFileSync('logic-1-' + file.toString(), buff.slice(0, ii + 2));
   }
   var metaFreq = null;
   if (freq > 1000000) {
