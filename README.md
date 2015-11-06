@@ -8,4 +8,4 @@ Node.js 4.2.1
 
 ##Usage
 
-  $ ./csv2sr <filename>
+  $ ./csv2sr filename.csv
